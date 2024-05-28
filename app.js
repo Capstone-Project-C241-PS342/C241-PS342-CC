@@ -1,12 +1,13 @@
-import express from "express";
+import express from 'express';
+import bodyParser from 'body-parser';
+import authRoutes from './routes/auth.js';
 
-const app = express(); 
-const PORT = 3000; 
+const app = express();
+const PORT = 3000;
 
-app.listen(PORT, (error) =>{ 
-    if(!error) {
-        console.log(`Server started on port: http://localhost:${PORT}`);
-    }else
-        console.log("Error occurred, server can't start", error); 
-    } 
-); 
+app.use(bodyParser.json());
+app.use('/api/auth', authRoutes);
+
+app.listen(PORT, () => {
+  console.log(`Server running on http://localhost:${PORT}`);
+});
