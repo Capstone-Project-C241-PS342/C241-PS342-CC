@@ -3,7 +3,7 @@ import bodyParser from 'body-parser';
 import authRoutes from './routes/auth.js';
 
 const app = express();
-const PORT = 3000;
+const PORT = 3001
 
 app.use(bodyParser.json());
 app.use('/api/auth', authRoutes);
