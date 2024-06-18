@@ -142,5 +142,62 @@ router.put('/edit/:id', authenticateToken, (req, res) => {
   }
 });
 
+// Add Learning Media Route
+router.post('/learning_media', authenticateToken, (req, res) => {
+  const { video_link, video_title, video_desc, thumbnail_link } = req.body;
+
+  db.query('INSERT INTO learning_media (video_link, video_title, video_desc, thumbnail_link) VALUES (?, ?, ?, ?)', [video_link, video_title, video_desc, thumbnail_link], (err, result) => {
+    if (err) {
+      return res.status(500).send('Error adding learning media');
+    }
+    res.status(201).send('Learning media added successfully');
+  });
+});
+
+// Delete Learning Media Route by ID
+router.delete('/learning_media/:id', authenticateToken, (req, res) => {
+  const mediaIdToDelete = req.params.id;
+
+  db.query('DELETE FROM learning_media WHERE id = ?', [mediaIdToDelete], (err, result) => {
+    if (err) {
+      return res.status(500).send('Database error');
+    }
+    if (result.affectedRows === 0) {
+      return res.status(404).send('Learning media not found');
+    }
+
+    res.send('Learning media deleted successfully');
+  });
+});
+
+// Get All Learning Media Route
+router.get('/learning_media', authenticateToken, (req, res) => {
+  db.query('SELECT id, video_link, video_title, video_desc, thumbnail_link FROM learning_media', (err, results) => {
+    if (err) {
+      return res.status(500).send('Error retrieving learning media');
+    }
+    if (results.length === 0) {
+      return res.status(404).send('No learning media found');
+    }
+
+    res.json(results);
+  });
+});
+
+// Get Learning Media by ID Route
+router.get('/learning_media/:id', authenticateToken, (req, res) => {
+  const mediaId = req.params.id;
+
+  db.query('SELECT id, video_link, video_title, video_desc, thumbnail_link FROM learning_media WHERE id = ?', [mediaId], (err, result) => {
+    if (err) {
+      return res.status(500).send('Error retrieving learning media');
+    }
+    if (result.length === 0) {
+      return res.status(404).send('Learning media not found');
+    }
+
+    res.json(result[0]);
+  });
+});
 
 export default router;
