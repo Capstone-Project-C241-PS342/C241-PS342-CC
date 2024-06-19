@@ -29,16 +29,16 @@ jobs:
 
     - name: Build Docker image
       run: |
-        docker build -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/your-image-name:latest .
+        docker build -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/capstone_docker_C241-PS342:latest .
 
     - name: Push Docker image
       run: |
-        docker push gcr.io/${{ secrets.GCP_PROJECT_ID }}/your-image-name:latest
+        docker push gcr.io/${{ secrets.GCP_PROJECT_ID }}/capstone_docker_C241-PS342:latest
 
     - name: Deploy to Cloud Run
       run: |
-        gcloud run deploy your-service-name \
-          --image gcr.io/${{ secrets.GCP_PROJECT_ID }}/your-image-name:latest \
+        gcloud run deploy c241-ps342-cc \
+          --image gcr.io/${{ secrets.GCP_PROJECT_ID }}/capstone_docker_C241-PS342:latest \
           --platform managed \
           --region ${{ secrets.GCP_REGION }} \
           --allow-unauthenticated
