@@ -10,7 +10,7 @@ import fs from 'fs';
 dotenv.config();
 
 // Write the service account key to a file from the environment variable
-const keyFilePath = '/workspace/keyfile.json';
+const keyFilePath = '/tmp/keyfile.json';
 fs.writeFileSync(keyFilePath, process.env.GOOGLE_APPLICATION_CREDENTIALS);
 
 // Initialize Google Cloud Storage with the credentials
