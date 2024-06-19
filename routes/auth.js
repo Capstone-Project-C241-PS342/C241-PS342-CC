@@ -19,7 +19,7 @@ fs.writeFileSync(keyFilePath, process.env.GOOGLE_APPLICATION_CREDENTIALS);
 const storage = new Storage({
   keyFilename: keyFilePath,
 });
-const bucket = storage.bucket('your-bucket-name'); // Replace with your bucket name
+const bucket = storage.bucket('cc-c241-ps342'); // Replace with your bucket name
 
 const router = express.Router();
 
