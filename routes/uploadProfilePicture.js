@@ -4,31 +4,17 @@ import { Storage } from '@google-cloud/storage';
 import { authenticateToken } from '../middleware/authMiddleware.js';
 import db from '../db.js';
 import dotenv from 'dotenv';
-import fs from 'fs';
 
-// Load environment variables from .env file
 dotenv.config();
 
-// Write the service account key to a file from the environment variable
-const keyFilePath = '/tmp/keyfile.json';
-const keyFileContent = Buffer.from(process.env.GOOGLE_APPLICATION_CREDENTIALS, 'base64').toString('utf8');
-fs.writeFileSync(keyFilePath, keyFileContent);
-
-// Console log the content of the key file to verify
-const readKeyFileContent = fs.readFileSync(keyFilePath, 'utf8');
-console.log('Service Account Key File Content:', readKeyFileContent);
-
-// Initialize Google Cloud Storage with the credentials
+const router = express.Router();
 const storage = new Storage({
-  keyFilename: keyFilePath,
+  keyFilename: process.env.GOOGLE_APPLICATION_CREDENTIALS,
 });
 const bucket = storage.bucket('cc-c241-ps342'); // Replace with your bucket name
 
-// Configure multer
 const multerStorage = multer.memoryStorage();
 const upload = multer({ storage: multerStorage });
-
-const router = express.Router();
 
 router.post('/upload-profile-picture', authenticateToken, upload.single('profile_picture'), async (req, res) => {
   if (!req.file) {
@@ -42,6 +28,7 @@ router.post('/upload-profile-picture', authenticateToken, upload.single('profile
   });
 
   blobStream.on('error', (err) => {
+    console.error('Error uploading to Google Cloud Storage:', err);
     res.status(500).send('Error uploading to Google Cloud Storage');
   });
 
@@ -50,6 +37,7 @@ router.post('/upload-profile-picture', authenticateToken, upload.single('profile
 
     db.query('UPDATE users SET profile_picture_url = ? WHERE id = ?', [publicUrl, req.user.id], (err, result) => {
       if (err) {
+        console.error('Database error:', err);
         return res.status(500).send('Database error');
       }
       res.status(200).send({ profilePictureUrl: publicUrl });
