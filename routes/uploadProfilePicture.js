@@ -23,7 +23,7 @@ router.post('/upload-profile-picture', authenticateToken, upload.single('profile
     return res.status(400).send('No file uploaded');
   }
 
-  const blob = bucket.file(req.file.originalname);
+  const blob = bucket.file(`${Date.now()}_${req.file.originalname}`);
   const blobStream = blob.createWriteStream({
     resumable: false,
     contentType: req.file.mimetype,
