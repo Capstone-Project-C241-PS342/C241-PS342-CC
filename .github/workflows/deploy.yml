@@ -24,12 +24,15 @@ jobs:
         project_id: ${{ secrets.GCP_PROJECT_ID }}
         install_components: 'beta'
 
+    - name: Create Service Account Key JSON File
+      run: echo '${{ secrets.GCP_SA_KEY }}' > service_account_key.json
+
     - name: Configure Docker
       run: gcloud auth configure-docker asia-southeast2-docker.pkg.dev
 
     - name: Build Docker image
       run: |
-        docker build -t asia-southeast2-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/cloud-run-source-deploy/capstone_docker_c241-ps342:latest .
+        docker build --build-arg SERVICE_ACCOUNT_KEY=service_account_key.json -t asia-southeast2-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/cloud-run-source-deploy/capstone_docker_c241-ps342:latest .
 
     - name: Push Docker image
       run: |
@@ -37,10 +40,9 @@ jobs:
 
     - name: Deploy to Cloud Run
       run: |
-        echo "${{ secrets.GCP_SA_KEY }}" | base64 --decode > /tmp/keyfile.json
         gcloud run deploy c241-ps342-cc \
           --image asia-southeast2-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/cloud-run-source-deploy/capstone_docker_c241-ps342:latest \
           --platform managed \
           --region asia-southeast2 \
           --allow-unauthenticated \
-          --update-env-vars GOOGLE_APPLICATION_CREDENTIALS=/tmp/keyfile.json,DB_HOST=${{ secrets.DB_HOST }},DB_USER=${{ secrets.DB_USER }},DB_PASSWORD=${{ secrets.DB_PASSWORD }},DB_NAME=${{ secrets.DB_NAME }}
+          --update-env-vars DB_HOST=${{ secrets.DB_HOST }},DB_USER=${{ secrets.DB_USER }},DB_PASSWORD=${{ secrets.DB_PASSWORD }},DB_NAME=${{ secrets.DB_NAME }}
