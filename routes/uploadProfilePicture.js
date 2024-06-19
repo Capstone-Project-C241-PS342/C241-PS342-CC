@@ -13,6 +13,10 @@ dotenv.config();
 const keyFilePath = '/tmp/keyfile.json';
 fs.writeFileSync(keyFilePath, process.env.GOOGLE_APPLICATION_CREDENTIALS);
 
+// Console log the content of the key file to verify
+const keyFileContent = fs.readFileSync(keyFilePath, 'utf8');
+console.log('Service Account Key File Content:', keyFileContent);
+
 // Initialize Google Cloud Storage with the credentials
 const storage = new Storage({
   keyFilename: keyFilePath,

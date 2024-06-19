@@ -23,6 +23,10 @@ const bucket = storage.bucket('cc-c241-ps342'); // Replace with your bucket name
 
 const router = express.Router();
 
+// Console log the content of the key file to verify
+const keyFileContent = fs.readFileSync(keyFilePath, 'utf8');
+console.log('Service Account Key File Content:', keyFileContent);
+
 // Function to make filenames URL-safe
 const makeFilenameURLSafe = (filename) => {
   return filename.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_\-\.]/g, '');
