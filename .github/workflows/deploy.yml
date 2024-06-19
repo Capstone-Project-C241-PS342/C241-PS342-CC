@@ -13,10 +13,14 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v2
 
+    - name: Write GCP credentials to file
+      run: |
+        echo "${{ secrets.GCP_SA_KEY }}" > /tmp/keyfile.json
+
     - name: Authenticate to Google Cloud
       uses: google-github-actions/auth@v1
       with:
-        credentials_json: ${{ secrets.GCP_SA_KEY }}
+        credentials_json: /tmp/keyfile.json
 
     - name: Set up Cloud SDK
       uses: google-github-actions/setup-gcloud@v1
@@ -37,20 +41,9 @@ jobs:
 
     - name: Deploy to Cloud Run
       run: |
-        echo "${{ secrets.GCP_SA_KEY }}" > /tmp/keyfile.json
         gcloud run deploy c241-ps342-cc \
           --image asia-southeast2-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/cloud-run-source-deploy/capstone_docker_c241-ps342:latest \
           --platform managed \
           --region asia-southeast2 \
           --allow-unauthenticated \
-          --update-env-vars GOOGLE_APPLICATION_CREDENTIALS=/tmp/keyfile.json \
-          --update-env-vars DB_HOST=${{ secrets.DB_HOST }} \
-          --update-env-vars DB_USER=${{ secrets.DB_USER }} \
-          --update-env-vars DB_PASSWORD=${{ secrets.DB_PASSWORD }} \
-          --update-env-vars DB_NAME=${{ secrets.DB_NAME }}
-
-    - name: Debug - List files in /tmp
-      run: ls -la /tmp
-
-    - name: Debug - Print environment variables
-      run: printenv
+          --update-env-vars GOOGLE_APPLICATION_CREDENTIALS=/tmp/keyfile.json,DB_HOST=${{ secrets.DB_HOST }},DB_USER=${{ secrets.DB_USER }},DB_PASSWORD=${{ secrets.DB_PASSWORD }},DB_NAME=${{ secrets.DB_NAME }}

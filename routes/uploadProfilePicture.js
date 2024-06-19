@@ -11,11 +11,12 @@ dotenv.config();
 
 // Write the service account key to a file from the environment variable
 const keyFilePath = '/tmp/keyfile.json';
-fs.writeFileSync(keyFilePath, process.env.GOOGLE_APPLICATION_CREDENTIALS);
+const keyFileContent = Buffer.from(process.env.GOOGLE_APPLICATION_CREDENTIALS, 'base64').toString('utf8');
+fs.writeFileSync(keyFilePath, keyFileContent);
 
 // Console log the content of the key file to verify
-const keyFileContent = fs.readFileSync(keyFilePath, 'utf8');
-console.log('Service Account Key File Content:', keyFileContent);
+const readKeyFileContent = fs.readFileSync(keyFilePath, 'utf8');
+console.log('Service Account Key File Content:', readKeyFileContent);
 
 // Initialize Google Cloud Storage with the credentials
 const storage = new Storage({
