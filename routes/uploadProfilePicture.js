@@ -4,13 +4,22 @@ import { Storage } from '@google-cloud/storage';
 import { authenticateToken } from '../middleware/authMiddleware.js';
 import db from '../db.js';
 import dotenv from 'dotenv';
+import fs from 'fs';
 
 // Load environment variables from .env file
 dotenv.config();
 
 const router = express.Router();
+
+// Ensure the service account key file exists
+const keyFilePath = process.env.GOOGLE_APPLICATION_CREDENTIALS || '/etc/secrets/service-account-key/service-account-key.json';
+if (!fs.existsSync(keyFilePath)) {
+  throw new Error(`Service account key file not found at ${keyFilePath}`);
+}
+
+// Initialize Google Cloud Storage with the credentials
 const storage = new Storage({
-  keyFilename: process.env.GOOGLE_APPLICATION_CREDENTIALS,
+  keyFilename: keyFilePath,
 });
 const bucket = storage.bucket('cc-c241-ps342'); // Replace with your bucket name
 
@@ -23,7 +32,7 @@ router.post('/upload-profile-picture', authenticateToken, upload.single('profile
     return res.status(400).send('No file uploaded');
   }
 
-  const blob = bucket.file(`${Date.now()}_${req.file.originalname}`);
+  const blob = bucket.file(req.file.originalname);
   const blobStream = blob.createWriteStream({
     resumable: false,
     contentType: req.file.mimetype,
