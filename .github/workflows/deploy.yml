@@ -29,16 +29,16 @@ jobs:
 
     - name: Build Docker image
       run: |
-        docker build -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/capstone_docker_c241-ps342:latest .
+        docker build -t asia-southeast2-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/cloud-run-source-deploy/capstone_docker_c241-ps342:latest .
 
     - name: Push Docker image
       run: |
-        docker push gcr.io/${{ secrets.GCP_PROJECT_ID }}/capstone_docker_c241-ps342:latest
+        docker push asia-southeast2-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/cloud-run-source-deploy/capstone_docker_c241-ps342:latest
 
     - name: Deploy to Cloud Run
       run: |
         gcloud run deploy c241-ps342-cc \
-          --image gcr.io/${{ secrets.GCP_PROJECT_ID }}/capstone_docker_c241-ps342:latest \
+          --image asia-southeast2-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/cloud-run-source-deploy/capstone_docker_c241-ps342:latest \
           --platform managed \
-          --region ${{ secrets.GCP_REGION }} \
+          --region asia-southeast2 \
           --allow-unauthenticated
