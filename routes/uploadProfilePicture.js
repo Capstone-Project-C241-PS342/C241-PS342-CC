@@ -9,23 +9,21 @@ import fs from 'fs';
 // Load environment variables from .env file
 dotenv.config();
 
-const router = express.Router();
-
-// Ensure the service account key file exists
-const keyFilePath = process.env.GOOGLE_APPLICATION_CREDENTIALS || '/etc/secrets/service-account-key/service-account-key.json';
-if (!fs.existsSync(keyFilePath)) {
-  throw new Error(`Service account key file not found at ${keyFilePath}`);
-}
+// Write the service account key to a file from the environment variable
+const keyFilePath = '/workspace/keyfile.json';
+fs.writeFileSync(keyFilePath, process.env.GOOGLE_APPLICATION_CREDENTIALS);
 
 // Initialize Google Cloud Storage with the credentials
 const storage = new Storage({
   keyFilename: keyFilePath,
 });
-const bucket = storage.bucket('cc-c241-ps342'); // Replace with your bucket name
+const bucket = storage.bucket('your-bucket-name'); // Replace with your bucket name
 
 // Configure multer
 const multerStorage = multer.memoryStorage();
 const upload = multer({ storage: multerStorage });
+
+const router = express.Router();
 
 router.post('/upload-profile-picture', authenticateToken, upload.single('profile_picture'), async (req, res) => {
   if (!req.file) {

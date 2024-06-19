@@ -6,15 +6,22 @@ import multer from 'multer';
 import { Storage } from '@google-cloud/storage';
 import { authenticateToken } from '../middleware/authMiddleware.js';
 import dotenv from 'dotenv';
+import fs from 'fs';
 
 // Load environment variables from .env file
 dotenv.config();
 
-const router = express.Router();
+// Write the service account key to a file from the environment variable
+const keyFilePath = '/workspace/keyfile.json';
+fs.writeFileSync(keyFilePath, process.env.GOOGLE_APPLICATION_CREDENTIALS);
+
+// Initialize Google Cloud Storage with the credentials
 const storage = new Storage({
-  keyFilename: process.env.GOOGLE_APPLICATION_CREDENTIALS,
+  keyFilename: keyFilePath,
 });
-const bucket = storage.bucket('cc-c241-ps342'); // Replace with your bucket name
+const bucket = storage.bucket('your-bucket-name'); // Replace with your bucket name
+
+const router = express.Router();
 
 // Function to make filenames URL-safe
 const makeFilenameURLSafe = (filename) => {
@@ -68,6 +75,67 @@ router.post('/register', upload.single('profile_picture'), (req, res) => {
         saveUser(null);
       }
     });
+  });
+});
+
+// Edit User Route
+router.put('/edit/:id', authenticateToken, upload.single('profile_picture'), (req, res) => {
+  const userId = req.params.id;
+  const { username, email, password } = req.body;
+  const file = req.file;
+
+  db.query('SELECT * FROM users WHERE (username = ? OR email = ?) AND id != ?', [username, email, userId], (err, result) => {
+    if (err) {
+      return res.status(500).send('Server error');
+    }
+    if (result.length > 0) {
+      return res.status(400).send('Username or email already exists');
+    }
+
+    const updateUser = (profilePictureUrl) => {
+      const updateCallback = (err, result) => {
+        if (err) {
+          return res.status(500).send('Error updating user');
+        }
+        if (result.affectedRows === 0) {
+          return res.status(404).send('User not found');
+        }
+        res.send('User updated successfully');
+      };
+
+      if (password) {
+        bcrypt.hash(password, 10, (err, hash) => {
+          if (err) {
+            return res.status(500).send('Error hashing password');
+          }
+          db.query('UPDATE users SET username = ?, email = ?, password = ?, profile_picture_url = ? WHERE id = ?', [username, email, hash, profilePictureUrl, userId], updateCallback);
+        });
+      } else {
+        db.query('UPDATE users SET username = ?, email = ?, profile_picture_url = ? WHERE id = ?', [username, email, profilePictureUrl, userId], updateCallback);
+      }
+    };
+
+    if (file) {
+      const safeFilename = makeFilenameURLSafe(file.originalname);
+      const blob = bucket.file(safeFilename);
+      const blobStream = blob.createWriteStream({
+        resumable: false,
+        contentType: file.mimetype,
+      });
+
+      blobStream.on('error', (err) => {
+        res.status(500).send('Error uploading to Google Cloud Storage');
+      });
+
+      blobStream.on('finish', () => {
+        const publicUrl = `https://storage.googleapis.com/${bucket.name}/${safeFilename}`;
+        updateUser(publicUrl);
+      });
+
+      blobStream.end(file.buffer);
+    } else {
+      updateUser(req.body.profile_picture_url || null);
+    }
   });
 });
 
@@ -150,65 +218,65 @@ router.delete('/delete/:id', authenticateToken, (req, res) => {
   });
 
 // Edit User Route
-router.put('/edit/:id', authenticateToken, upload.single('profile_picture'), (req, res) => {
-  const userId = req.params.id;
-  const { username, email, password } = req.body;
-  const file = req.file;
+// router.put('/edit/:id', authenticateToken, upload.single('profile_picture'), (req, res) => {
+//   const userId = req.params.id;
+//   const { username, email, password } = req.body;
+//   const file = req.file;
 
-  db.query('SELECT * FROM users WHERE (username = ? OR email = ?) AND id != ?', [username, email, userId], (err, result) => {
-    if (err) {
-      return res.status(500).send('Server error');
-    }
-    if (result.length > 0) {
-      return res.status(400).send('Username or email already exists');
-    }
+//   db.query('SELECT * FROM users WHERE (username = ? OR email = ?) AND id != ?', [username, email, userId], (err, result) => {
+//     if (err) {
+//       return res.status(500).send('Server error');
+//     }
+//     if (result.length > 0) {
+//       return res.status(400).send('Username or email already exists');
+//     }
 
-    const updateUser = (profilePictureUrl) => {
-      const updateCallback = (err, result) => {
-        if (err) {
-          return res.status(500).send('Error updating user');
-        }
-        if (result.affectedRows === 0) {
-          return res.status(404).send('User not found');
-        }
-        res.send('User updated successfully');
-      };
+//     const updateUser = (profilePictureUrl) => {
+//       const updateCallback = (err, result) => {
+//         if (err) {
+//           return res.status(500).send('Error updating user');
+//         }
+//         if (result.affectedRows === 0) {
+//           return res.status(404).send('User not found');
+//         }
+//         res.send('User updated successfully');
+//       };
 
-      if (password) {
-        bcrypt.hash(password, 10, (err, hash) => {
-          if (err) {
-            return res.status(500).send('Error hashing password');
-          }
-          db.query('UPDATE users SET username = ?, email = ?, password = ?, profile_picture_url = ? WHERE id = ?', [username, email, hash, profilePictureUrl, userId], updateCallback);
-        });
-      } else {
-        db.query('UPDATE users SET username = ?, email = ?, profile_picture_url = ? WHERE id = ?', [username, email, profilePictureUrl, userId], updateCallback);
-      }
-    };
+//       if (password) {
+//         bcrypt.hash(password, 10, (err, hash) => {
+//           if (err) {
+//             return res.status(500).send('Error hashing password');
+//           }
+//           db.query('UPDATE users SET username = ?, email = ?, password = ?, profile_picture_url = ? WHERE id = ?', [username, email, hash, profilePictureUrl, userId], updateCallback);
+//         });
+//       } else {
+//         db.query('UPDATE users SET username = ?, email = ?, profile_picture_url = ? WHERE id = ?', [username, email, profilePictureUrl, userId], updateCallback);
+//       }
+//     };
 
-    if (file) {
-      const safeFilename = makeFilenameURLSafe(file.originalname);
-      const blob = bucket.file(safeFilename);
-      const blobStream = blob.createWriteStream({
-        resumable: false,
-        contentType: file.mimetype,
-      });
+//     if (file) {
+//       const safeFilename = makeFilenameURLSafe(file.originalname);
+//       const blob = bucket.file(safeFilename);
+//       const blobStream = blob.createWriteStream({
+//         resumable: false,
+//         contentType: file.mimetype,
+//       });
 
-      blobStream.on('error', (err) => {
-        res.status(500).send('Error uploading to Google Cloud Storage');
-      });
+//       blobStream.on('error', (err) => {
+//         res.status(500).send('Error uploading to Google Cloud Storage');
+//       });
 
-      blobStream.on('finish', () => {
-        const publicUrl = `https://storage.googleapis.com/${bucket.name}/${safeFilename}`;
-        updateUser(publicUrl);
-      });
+//       blobStream.on('finish', () => {
+//         const publicUrl = `https://storage.googleapis.com/${bucket.name}/${safeFilename}`;
+//         updateUser(publicUrl);
+//       });
 
-      blobStream.end(file.buffer);
-    } else {
-      updateUser(req.body.profile_picture_url || null);
-    }
-  });
-});
+//       blobStream.end(file.buffer);
+//     } else {
+//       updateUser(req.body.profile_picture_url || null);
+//     }
+//   });
+// });
 
 // Add Learning Media Route
 router.post('/learning_media', authenticateToken, (req, res) => {
