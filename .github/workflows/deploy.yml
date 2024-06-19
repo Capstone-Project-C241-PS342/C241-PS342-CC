@@ -13,14 +13,10 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v2
 
-    - name: Write GCP credentials to file
-      run: |
-        echo "${{ secrets.GCP_SA_KEY }}" | base64 --decode > /tmp/keyfile.json
-
     - name: Authenticate to Google Cloud
       uses: google-github-actions/auth@v1
       with:
-        credentials_json: /tmp/keyfile.json
+        credentials_json: ${{ secrets.GCP_SA_KEY }}
 
     - name: Set up Cloud SDK
       uses: google-github-actions/setup-gcloud@v1
@@ -41,6 +37,7 @@ jobs:
 
     - name: Deploy to Cloud Run
       run: |
+        echo "${{ secrets.GCP_SA_KEY }}" | base64 --decode > /tmp/keyfile.json
         gcloud run deploy c241-ps342-cc \
           --image asia-southeast2-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/cloud-run-source-deploy/capstone_docker_c241-ps342:latest \
           --platform managed \
