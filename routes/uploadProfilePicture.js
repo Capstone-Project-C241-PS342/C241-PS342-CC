@@ -9,7 +9,7 @@ dotenv.config();
 
 const router = express.Router();
 const storage = new Storage({
-  keyFilename: process.env.GOOGLE_APPLICATION_CREDENTIALS,
+  keyFilename: "./service_account_key.json",
 });
 const bucket = storage.bucket('cc-c241-ps342'); // Replace with your bucket name
 

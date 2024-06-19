@@ -1,5 +1,9 @@
 FROM node:20
 
+ARG SERVICE_ACCOUNT_KEY
+
+ENV SERVICE_ACCOUNT_KEY ${SERVICE_ACCOUNT_KEY}
+
 WORKDIR /usr/src/app
 
 COPY package*.json ./
@@ -7,6 +11,8 @@ COPY package*.json ./
 RUN npm install
 
 COPY . .
+
+ADD ${SERVICE_ACCOUNT_KEY} ./
 
 EXPOSE 3000
 
